@@ -34,8 +34,8 @@ public class AsteroidRestController {
 		
 		Scanner scan = new Scanner(System.in);
 		
-		String startDate = ""; // "2015-09-26";
-		String endDate = ""; // "2015-10-03";
+		String startDate = ""; 
+		String endDate = ""; 
 		
 		System.out.println("Enter start date (yyyy-mm-dd): ");
 		startDate = scan.nextLine();
@@ -127,14 +127,10 @@ public class AsteroidRestController {
 	
 	public static void parseJson(String jsonString, String[] dates, List<Asteroid> asteroids) {
 		
-//		JSONParser parse = new JSONParser();
-//		JSONObject jsonObject = (JSONObject) parse.parse(jsonString);
-//		JSONObject nearEarthObj = (JSONObject) jsonObject.get("near_earth_objects");
-		
 		JSONObject jsonObject = new JSONObject(jsonString);
 		JSONObject nearEarthObj = (JSONObject) jsonObject.get("near_earth_objects");
 		
-		int ctr= 0;
+		int ctr = 0;
 		Asteroid asteroid = new Asteroid();
 		
 		for (String date : dates) {
@@ -145,9 +141,6 @@ public class AsteroidRestController {
 				ctr++;
 				
 				JSONObject asteroidObj = (JSONObject) jsonArray.get(i);
-				
-//				System.out.println(ctr);
-//				
 				
 				asteroid.setId(asteroidObj.get("id").toString());
 				asteroid.setName(asteroidObj.get("name").toString());
@@ -165,8 +158,7 @@ public class AsteroidRestController {
 					JSONObject closeAppAsteroid = (JSONObject) closeAppData.get(j);
 					
 					String closeAppDate = (String) closeAppAsteroid.get("close_approach_date");
-					LocalDate ldCloseApp = convertToLocalDate(closeAppDate);
-					asteroid.setCloseApproachDate(ldCloseApp);
+					asteroid.setCloseApproachDate(closeAppDate);
 	
 					JSONObject missDistance = (JSONObject) closeAppAsteroid.get("miss_distance");
 					
@@ -189,11 +181,4 @@ public class AsteroidRestController {
 				.toString();
 	}
 
-	public static LocalDate convertToLocalDate(String date) {
-		
-		DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-		LocalDate ld = LocalDate.parse(date, dateFormatter);
-		
-		return ld;
-	}
 }
