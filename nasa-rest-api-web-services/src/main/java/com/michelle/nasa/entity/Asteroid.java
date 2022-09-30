@@ -11,7 +11,7 @@ public class Asteroid {
 	private String id;
 	private String name;
 	private BigDecimal estimatedDiameter;
-	private LocalDate closeApproachDate;
+	private String closeApproachDate;
 	private double missDistance;
 	
 	public Asteroid() {
@@ -42,11 +42,11 @@ public class Asteroid {
 		this.estimatedDiameter = estimatedDiameter;
 	}
 
-	public LocalDate getCloseApproachDate() {
+	public String getCloseApproachDate() {
 		return closeApproachDate;
 	}
 
-	public void setCloseApproachDate(LocalDate closeApproachDate) {
+	public void setCloseApproachDate(String closeApproachDate) {
 		this.closeApproachDate = closeApproachDate;
 	}
 
