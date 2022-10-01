@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,163 +22,33 @@ import org.springframework.web.bind.annotation.RestController;
 import org.json.*;
 
 import com.michelle.nasa.entity.Asteroid;
+import com.michelle.nasa.service.AsteroidService;
 
 @RestController
 @RequestMapping("/api")
 public class AsteroidRestController {
-
-	List<Asteroid> asteroids = new ArrayList<Asteroid>();
 	
-	@PostConstruct
-	public void loadData() throws MalformedURLException, IOException {
-		
-		Scanner scan = new Scanner(System.in);
-		
-		String startDate = ""; 
-		String endDate = ""; 
-		
-		System.out.println("Enter start date (yyyy-mm-dd): ");
-		startDate = scan.nextLine();
-		
-		System.out.println("Enter end date (yyyy-mm-dd): ");
-		endDate = scan.nextLine();
-		
-		String apiKey = "bX99fC2l6yPGvFUCh6lfwfRuBhdL2LjGb5kNAnwr";
-		String website = "https://api.nasa.gov/neo/rest/v1/feed?start_date=" + startDate + 
-				"&end_date=" + endDate   // + "&detailed=false&"
-						+ "&api_key=" + apiKey;
-		
-		String jsonString = getJsonData(website);
-		
-		String[] localDates = new String[8];
-		int ctr = 0;
-		String localDate = startDate;
-		
-		while (localDate.compareTo(endDate) <= 0) {
-			localDates[ctr] = localDate;
-			localDate = addOneDay(localDate);
-			ctr++;
-		}
-		
-		parseJson(jsonString, localDates, asteroids);
-
-	}
+	@Autowired
+	private AsteroidService asteroidService;
 	
 	// define endpoint for "/asteroids"
 	@GetMapping("/asteroids")
-	public List<Asteroid> getAsteroids() {
+	public List<Asteroid> getAsteroids() throws MalformedURLException, IOException {
 		
-		return asteroids;
+		return asteroidService.getAsteroids();
 	}
 	
 	@GetMapping("/10nearestasteroids")
-	public List<Asteroid> get10NearestAsteroids() {
-		
-		List<Asteroid> sortedAsteroids = asteroids.stream()
-				.sorted(Comparator.comparingDouble(Asteroid::getMissDistance))
-				.collect(Collectors.toList());
-		
-		List<Asteroid> tenNearest = new ArrayList<Asteroid>();
-		
-		for (int i = 0; i < 10; i++) {
-			
-			tenNearest.add(sortedAsteroids.get(i));
-		}
-		
-		return tenNearest;
+	public List<Asteroid> get10NearestAsteroids() throws MalformedURLException, IOException {
+
+		return asteroidService.get10NearestAsteroids();
 	}
 	
 	@GetMapping("/largestasteroid")
-	public Asteroid getLargestAsteroids() {
+	public Asteroid getLargestAsteroid() throws MalformedURLException, IOException {
 		
-		List<Asteroid> sortedAsteroids = asteroids.stream()
-				.sorted(Comparator.comparing(Asteroid::getEstimatedDiameter).reversed())
-				.collect(Collectors.toList());
-		
-		return sortedAsteroids.get(0);
+		return asteroidService.getLargestAsteroid();
 	}
 	
-	public String getJsonData(String website) throws MalformedURLException, IOException {
-		
-		URL url = new URL(website);
-		
-		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-		
-		connection.setRequestMethod("GET");
-		connection.connect();
-		
-		int responseCode = connection.getResponseCode();
-		if (responseCode == 200) {
-			
-			String response = "";
-			Scanner scanner = new Scanner(url.openStream()); // (connection.getInputStream());
-			while (scanner.hasNextLine()) {
-				response += scanner.nextLine();
-				response += "\n";
-			}
-			
-			scanner.close();
-			
-			return response;
-		}
-		
-		return null;
-	}
-	
-	public static void parseJson(String jsonString, String[] dates, List<Asteroid> asteroids) {
-		
-		JSONObject jsonObject = new JSONObject(jsonString);
-		JSONObject nearEarthObj = (JSONObject) jsonObject.get("near_earth_objects");
-		
-		int ctr = 0;
-		Asteroid asteroid = new Asteroid();
-		
-		for (String date : dates) {
-			JSONArray jsonArray = (JSONArray) nearEarthObj.get(date); 
-			
-			for (int i = 0; i < jsonArray.length(); i++) {
-				
-				ctr++;
-				
-				JSONObject asteroidObj = (JSONObject) jsonArray.get(i);
-				
-				asteroid.setId(asteroidObj.get("id").toString());
-				asteroid.setName(asteroidObj.get("name").toString());
-				
-				JSONObject diameterObj = (JSONObject) asteroidObj.get("estimated_diameter");
-				JSONObject diameterKmObj = (JSONObject) diameterObj.get("kilometers");
-				BigDecimal minDiameter = (BigDecimal) diameterKmObj.get("estimated_diameter_min");
-				BigDecimal maxDiameter = (BigDecimal) diameterKmObj.get("estimated_diameter_max");
-				BigDecimal averageDiameter = (minDiameter.add(maxDiameter)).divide(BigDecimal.valueOf(2));
-				asteroid.setEstimatedDiameter(averageDiameter);
-				
-				JSONArray closeAppData = (JSONArray) asteroidObj.get("close_approach_data");
-				
-				for (int j = 0; j < closeAppData.length(); j++) {
-					JSONObject closeAppAsteroid = (JSONObject) closeAppData.get(j);
-					
-					String closeAppDate = (String) closeAppAsteroid.get("close_approach_date");
-					asteroid.setCloseApproachDate(closeAppDate);
-	
-					JSONObject missDistance = (JSONObject) closeAppAsteroid.get("miss_distance");
-					
-					String distanceKmStr = (String) missDistance.get("kilometers");
-					double distanceKm = Double.parseDouble(distanceKmStr);
-					asteroid.setMissDistance(distanceKm);
-				}
-				
-				asteroids.add(asteroid);
-				asteroid = new Asteroid();
-			}
-		}
-		
-	}
-
-	public static String addOneDay(String date) {
-		return LocalDate
-				.parse(date)
-				.plusDays(1)
-				.toString();
-	}
 
 }
